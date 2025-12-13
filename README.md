@@ -1,61 +1,45 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Infofilm (Laravel + TMDB)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplicació Laravel en català per descobrir pel·lícules, persones, col·leccions i paraules clau a partir de l’API de TheMovieDB (TMDB). Interfície Blade amb dades enriquides (fitxa, crítiques, imatges, recomanacions) i cerca avançada.
 
-## About Laravel
+## Configuració ràpida
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+1. Requisits: PHP 8.2+, Composer, Node.js 18+ i npm.
+2. Variables d’entorn (afegiu-les a `.env`):
+   - `TMDB_ACCESS_TOKEN` (token v4 obligatori) i, opcionalment, `TMDB_API_KEY`.
+   - `TMDB_BASE_URL` (per defecte `https://api.themoviedb.org/3`), `TMDB_LANGUAGE` (per defecte `ca-ES`) i `TMDB_REGION` si voleu forçar la regió.
+3. Instal·lació: `composer install` i `npm install`.
+4. Execució:
+   - Backend: `php artisan serve`
+   - Frontend: `npm run dev` (o `npm run build` per producció).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Funcionalitats
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Inici `/`: trending diari de pel·lícules amb filtres de llengua i regió; carrega també cartelleres (`now_playing`), populars, millor valorades i pròximes estrenes; mostra missatge d’error si TMDB falla.
+- Fitxa de pel·lícula `/movies/{id}`: dades completes (sinopsi, tagline, gèneres, durada, col·lecció, pressupost/ingressos, idiomes, webs externes), crèdits, imatges, vídeos de YouTube, recomanacions/similars, títols alternatius i traduccions, dates d’estrena amb certificacions, proves de visualització per regió i crítiques (fa fallback a anglès si no hi ha ressenyes en català).
+- Persones `/people/{id}`: biografia, alias, perfils socials, imatges, i filmografia agrupada per personatge/lloc de treball per evitar duplicats.
+- Persones populars `/people/popular`: llista paginada amb comptador de pàgines.
+- Col·leccions `/collections/{id}`: parts ordenades per popularitat, imatges i traduccions.
+- Companyies i xarxes `/companies/{id}`, `/networks/{id}`: dades bàsiques, noms alternatius i logotips.
+- Paraules clau `/keywords/{id}` i índex `/keywords`: llista de pel·lícules per keyword i recopilació de keywords a partir de populars + trending (sense duplicats, fins a 100).
+- Cerca `/search`: cerca de pel·lícules (amb filtres de gènere, any, proveïdor i idioma original), persones o col·leccions; pàginació i ordenació per popularitat.
+- Suggeriments `/search/suggest`: resposta JSON amb els primers resultats multi-search per autocompletar.
+- Vistes: plantilles Blade a `resources/views` (trending, movie, person, collection, company, network, keyword, keywords, search, people) amb components compartits.
 
-## Learning Laravel
+## Tests
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- Execució: `php artisan test` o `composer test` (ja netegen la configuració amb `php artisan config:clear`). Les crides a TMDB es faken amb `Http::fake`, així que no calen tokens per als tests i no hi ha peticions externes.
+- Cobertura principal (`tests/Feature/TmdbPagesTest.php`):
+  - Inici: renderitza dades trending i mostra l’error si TMDB respon 500.
+  - Pel·lícula: carrega la fitxa completa, comprova el fallback de crítiques en anglès i la tolerància a errors 500.
+  - Persones: carrega biografia/imatges, agrupa personatges/feines i manté la pàgina si TMDB falla.
+  - Col·leccions, companyies i xarxes: cada pàgina mostra les dades mínimes simulades.
+  - Keywords: pàgina individual amb pel·lícules i índex agregat des de populars + trending, incloent missatge d’error.
+  - Cerca: resultats de pel·lícules amb filtres enviats correctament, resultats de persones i endpoint JSON de suggeriments.
+  - Persones populars: paginació i missatge buit quan no hi ha resultats.
+- Tests bàsics addicionals: `tests/Feature/ExampleTest.php` valida el 200 inicial; `tests/Unit/ExampleTest.php` manté una asserció trivial.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Scripts útils
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- `npm run dev` / `npm run build` per al frontend (Vite + Tailwind).
+- `composer test` o `php artisan test` per executar tota la suite.
