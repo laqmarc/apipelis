@@ -236,6 +236,89 @@ class TmdbPagesTest extends TestCase
             ->assertSee('Bar');
     }
 
+    public function test_providers_page_lists_providers()
+    {
+        Http::fake([
+            'https://api.themoviedb.org/3/watch/providers/movie*' => Http::response([
+                'results' => [
+                    ['provider_id' => 8, 'provider_name' => 'Netflix', 'logo_path' => '/n.png', 'display_priority' => 1],
+                    ['provider_id' => 1799, 'provider_name' => 'Filmin', 'logo_path' => '/f.png', 'display_priority' => 2],
+                ],
+            ]),
+        ]);
+
+        $this->get('/providers')
+            ->assertOk()
+            ->assertSee('Netflix')
+            ->assertSee('Filmin');
+    }
+
+    public function test_providers_page_filters_movies_by_provider()
+    {
+        Http::fake([
+            'https://api.themoviedb.org/3/watch/providers/movie*' => Http::response([
+                'results' => [
+                    ['provider_id' => 8, 'provider_name' => 'Netflix', 'logo_path' => '/n.png'],
+                ],
+            ]),
+            'https://api.themoviedb.org/3/discover/movie*' => function ($request) {
+                $data = $request->data();
+                $this->assertSame('8', $data['with_watch_providers'] ?? null);
+                $this->assertSame('flatrate', $data['with_watch_monetization_types'] ?? null);
+
+                return Http::response([
+                    'results' => [
+                        ['id' => 1, 'title' => 'Provider Movie', 'poster_path' => '/p.jpg', 'release_date' => '2024-01-01', 'vote_average' => 7.2],
+                    ],
+                    'total_pages' => 2,
+                ]);
+            },
+        ]);
+
+        $this->get('/providers?provider=8&type=flatrate&page=1')
+            ->assertOk()
+            ->assertSee('Provider Movie')
+            ->assertSee('1 / 2');
+    }
+
+    public function test_providers_ajax_returns_movies_for_infinite_scroll()
+    {
+        Http::fake([
+            'https://api.themoviedb.org/3/watch/providers/movie*' => Http::response([
+                'results' => [
+                    ['provider_id' => 8, 'provider_name' => 'Netflix', 'logo_path' => '/n.png'],
+                ],
+            ]),
+            'https://api.themoviedb.org/3/discover/movie*' => Http::response([
+                'results' => [
+                    ['id' => 2, 'title' => 'More Movie', 'poster_path' => '/m.jpg', 'release_date' => '2024-02-02', 'vote_average' => 6.5],
+                ],
+                'total_pages' => 3,
+            ]),
+        ]);
+
+        $this->getJson('/providers?provider=8&page=2&ajax=1')
+            ->assertOk()
+            ->assertJsonFragment(['title' => 'More Movie'])
+            ->assertJsonFragment(['page' => 2]);
+    }
+
+    public function test_providers_page_handles_discover_error()
+    {
+        Http::fake([
+            'https://api.themoviedb.org/3/watch/providers/movie*' => Http::response([
+                'results' => [
+                    ['provider_id' => 1, 'provider_name' => 'Demo', 'logo_path' => null],
+                ],
+            ]),
+            'https://api.themoviedb.org/3/discover/movie*' => Http::response([], 500),
+        ]);
+
+        $this->get('/providers?provider=1')
+            ->assertOk()
+            ->assertSee("No s'han pogut carregar les pel·lícules del proveïdor.");
+    }
+
     public function test_search_suggest_returns_results()
     {
         Http::fake([

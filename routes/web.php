@@ -14,3 +14,4 @@ Route::get('/keywords', [TmdbController::class, 'keywords'])->name('keywords.ind
 Route::get('/networks/{id}', [TmdbController::class, 'network'])->name('network.show');
 Route::get('/search', [TmdbController::class, 'search'])->name('search');
 Route::get('/search/suggest', [TmdbController::class, 'searchSuggest'])->name('search.suggest');
+Route::get('/providers', [TmdbController::class, 'providers'])->name('providers');

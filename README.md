@@ -21,6 +21,7 @@ Aplicació Laravel en català per descobrir pel·lícules, persones, col·leccio
 - Persones populars `/people/popular`: llista paginada amb comptador de pàgines.
 - Col·leccions `/collections/{id}`: parts ordenades per popularitat, imatges i traduccions.
 - Companyies i xarxes `/companies/{id}`, `/networks/{id}`: dades bàsiques, noms alternatius i logotips.
+- Proveïdors `/providers`: catàleg de plataformes segons regió i filtre de pel·lícules per proveïdor i tipus (subscripció, gratis, anuncis, lloguer, compra) amb scroll infinit.
 - Paraules clau `/keywords/{id}` i índex `/keywords`: llista de pel·lícules per keyword i recopilació de keywords a partir de populars + trending (sense duplicats, fins a 100).
 - Cerca `/search`: cerca de pel·lícules (amb filtres de gènere, any, proveïdor i idioma original), persones o col·leccions; pàginació i ordenació per popularitat.
 - Suggeriments `/search/suggest`: resposta JSON amb els primers resultats multi-search per autocompletar.

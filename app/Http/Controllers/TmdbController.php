@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -695,6 +696,91 @@ class TmdbController extends Controller
         $error = null;
 
         return view('keywords', compact('keywords', 'error'));
+    }
+
+    public function providers(Request $request): View|JsonResponse
+    {
+        $language = config('services.tmdb.language', 'ca-ES');
+        $region = config('services.tmdb.region') ?: strtoupper(substr($language, -2) ?: 'US');
+        Carbon::setLocale('ca');
+
+        $client = Http::withToken(config('services.tmdb.access_token'))
+            ->baseUrl(config('services.tmdb.base_url', 'https://api.themoviedb.org/3'))
+            ->acceptJson()
+            ->asJson();
+
+        $providers = collect();
+        try {
+            $providersResponse = $client->get('/watch/providers/movie', [
+                'language' => $language,
+                'watch_region' => $region,
+            ])->throw();
+
+            $providers = collect($providersResponse->json('results', []))
+                ->filter(fn ($p) => isset($p['provider_id']))
+                ->sortBy('display_priority')
+                ->map(function ($p) {
+                    return [
+                        'id' => $p['provider_id'] ?? null,
+                        'name' => $p['provider_name'] ?? '',
+                        'logo' => $p['logo_path'] ?? null,
+                    ];
+                })
+                ->values();
+        } catch (RequestException|ConnectionException $e) {
+            $providers = collect();
+        }
+
+        $selectedProvider = $request->get('provider');
+        $monetization = $request->get('type');
+        $page = max(1, (int)$request->get('page', 1));
+        $movies = collect();
+        $totalPages = 1;
+        $error = null;
+        $isAjax = $request->boolean('ajax');
+
+        if ($selectedProvider) {
+            try {
+                $params = [
+                    'language' => $language,
+                    'watch_region' => $region,
+                    'with_watch_providers' => $selectedProvider,
+                    'sort_by' => 'popularity.desc',
+                    'page' => $page,
+                ];
+
+                if ($monetization) {
+                    $params['with_watch_monetization_types'] = $monetization;
+                }
+
+                $discover = $client->get('/discover/movie', $params)->throw();
+                $totalPages = $discover->json('total_pages', 1);
+                $movies = collect($discover->json('results', []))->map(function ($m) {
+                    return [
+                        'id' => $m['id'] ?? null,
+                        'title' => $m['title'] ?? $m['name'] ?? __('(Sense títol)'),
+                        'poster' => $m['poster_path'] ?? null,
+                        'release_date' => $m['release_date'] ?? null,
+                        'vote_average' => $m['vote_average'] ?? null,
+                    ];
+                });
+            } catch (RequestException|ConnectionException $e) {
+                $movies = collect();
+                $totalPages = 1;
+                $error = __("No s'han pogut carregar les pel·lícules del proveïdor.");
+            }
+        }
+
+        if ($isAjax) {
+            return response()->json([
+                'movies' => $movies->values(),
+                'page' => $page,
+                'total_pages' => $totalPages,
+                'error' => $error,
+            ]);
+        }
+
+        return view('providers', compact('providers', 'selectedProvider', 'monetization', 'movies', 'page', 'totalPages', 'error', 'region'));
     }
 
     public function search(Request $request): View

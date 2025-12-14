@@ -40,6 +40,7 @@ return [
         'api_key' => env('TMDB_API_KEY'),
         'access_token' => env('TMDB_ACCESS_TOKEN'),
         'language' => env('TMDB_LANGUAGE', 'ca-ES'),
+        'region' => env('TMDB_REGION'),
     ],
 
 ];
