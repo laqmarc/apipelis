@@ -48,6 +48,9 @@
             <a class="pill" href="{{ route('people.popular') }}">★ Persones populars</a>
             <a class="pill" href="{{ route('keywords.index') }}">🏷️ Keywords</a>
             <a class="pill" href="{{ route('search') }}">🔍 Cerca</a>
+                        <a class="pill" href="{{ route('providers') }}">Plataformes</a>
+
+            
         </div>
     </header>
 
